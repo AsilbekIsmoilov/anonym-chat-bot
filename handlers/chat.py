@@ -34,7 +34,6 @@ async def start_chat(message: Message):
     await message.bot.send_message(user_b, "✅ Suhbat boshlandi!", reply_markup=chat_kb)
 
 
-# 2️⃣ ⏭ KEYINGI SUHBATDOSH
 @router.message(F.text == "⏭ Keyingi")
 async def next_chat(message: Message):
     user_id = message.from_user.id
@@ -63,6 +62,50 @@ async def stop(message: Message):
 
     if peer:
         await message.bot.send_message(peer, "❌ Suhbatdosh chatni to‘xtatdi.")
+
+@router.message(F.content_type == "sticker")
+async def forward_sticker(message: Message):
+    user_id = message.from_user.id
+    peer = await redis.get(f"chat:{user_id}")
+
+    if not peer:
+        return
+
+    await message.bot.send_sticker(
+        chat_id=int(peer),
+        sticker=message.sticker.file_id
+    )
+
+@router.message(F.photo)
+async def forward_photo(message: Message):
+    user_id = message.from_user.id
+    peer = await redis.get(f"chat:{user_id}")
+
+    if not peer:
+        return
+
+    photo = message.photo[-1].file_id
+
+    await message.bot.send_photo(
+        chat_id=int(peer),
+        photo=photo,
+        caption=message.caption
+    )
+
+@router.message(F.animation)
+async def forward_gif(message: Message):
+    user_id = message.from_user.id
+    peer = await redis.get(f"chat:{user_id}")
+
+    if not peer:
+        return
+
+    await message.bot.send_animation(
+        chat_id=int(peer),
+        animation=message.animation.file_id,
+        caption=message.caption
+    )
+
 
 
 @router.message()
