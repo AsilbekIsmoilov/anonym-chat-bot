@@ -3,6 +3,8 @@ from storage.redis import redis
 async def start_search(user_id: int, location: str):
     queue_key = f"queue:{location}"
 
+    await redis.lrem(queue_key, 0, user_id)
+
     await redis.lpush(queue_key, user_id)
 
     if await redis.llen(queue_key) >= 2:
@@ -22,7 +24,10 @@ async def start_search(user_id: int, location: str):
 
 async def stop_chat(user_id: int):
     peer = await redis.get(f"chat:{user_id}")
-    if peer:
-        await redis.delete(f"chat:{user_id}")
-        await redis.delete(f"chat:{peer}")
-    return peer
+    if not peer:
+        return None
+
+    await redis.delete(f"chat:{user_id}")
+    await redis.delete(f"chat:{peer}")
+
+    return int(peer)
